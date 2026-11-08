@@ -1,49 +1,28 @@
 name: Owner mobile archive
 on:
   workflow_dispatch:
-    inputs:
-      mode:
-        description: Build or signing configuration check
-        type: choice
-        options:
-          - production
-          - signingcheck
-        default: production
-      startup_proof_run:
-        description: Optional earlier passing native startup run for the identical frozen input
-        type: string
-        default: ''
-      startup_method:
-        description: Native main startup verification method
-        type: choice
-        options:
-          - integration
-          - standalone
-        default: integration
 permissions:
   contents: write
 concurrency:
-  group: owner-mobile-${{ inputs.mode || 'production' }}
+  group: owner-mobile-archive-mistik-provision
   cancel-in-progress: false
 jobs:
   archive:
-    if: github.repository == 'icaruinn44/mobile-build-tools' && github.actor == 'icaruinn44' && github.ref == 'refs/heads/main'
+    if: github.repository == 'icaruinn44/mobile-build-tools' && github.actor == 'icaruinn44' && github.ref == 'refs/heads/mistik-ios-provision-20261109'
     runs-on: macos-26
-    timeout-minutes: 75
+    timeout-minutes: 20
     env:
-      PAYLOAD_KEY: ${{ secrets.PAYLOAD_KEY }}
-      INPUT_SHA256: ${{ vars.INPUT_SHA256 }}
+      PAYLOAD_KEY: ${{ secrets.MISTIK67_PAYLOAD_KEY }}
+      INPUT_SHA256: b43e807e4a5ffddf843df93c1888d40b098612cd626319e3ecc98a6489b35393
       ASC_KEY_BASE64: ${{ secrets.ASC_KEY_BASE64 }}
       ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
       ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
-      IOS_CERTIFICATE_BASE64: ${{ secrets.IOS_CERTIFICATE_BASE64 }}
+      IOS_CERTIFICATE_BASE64: ${{ secrets.MISTIK67_CERTIFICATE_BASE64 }}
       IOS_CERTIFICATE_PASSWORD: ''
-      BUNDLE_ID: com.mistikdevelopment.mysticera
+      BUNDLE_ID: com.mistikdevelopment.mistik
       APPLE_TEAM_ID: 4J4H8P56ZW
-      BUILD_NAME: 1.0.28
-      BUILD_NUMBER: '30'
-      VERIFIED_STARTUP_RUN: ${{ inputs.startup_proof_run }}
-      STARTUP_METHOD: ${{ inputs.startup_method }}
+      BUILD_NAME: 3.8.11
+      BUILD_NUMBER: '52'
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
         with:
@@ -57,34 +36,13 @@ jobs:
         run: python sealed_ci.py init
       - name: Resolve and verify application dependencies
         run: python sealed_ci.py deps
-      - name: Verify native application startup
-        if: inputs.mode != 'signingcheck'
-        run: python sealed_ci.py startup
-      - name: Configure distribution signing
-        run: python sealed_ci.py sign
-      - name: Archive and verify distribution package
-        if: inputs.mode != 'signingcheck'
-        run: python sealed_ci.py archive
-      - name: Upload verified package to Apple
-        if: inputs.mode != 'signingcheck'
-        run: python sealed_ci.py upload
       - name: Encrypt diagnostics and binary artifacts
         if: always()
         run: python sealed_ci.py package
       - name: Save encrypted owner artifact
-        id: publish_result
         if: always()
-        continue-on-error: true
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           test -f encrypted-result.bin
-          gh release create "result-${GITHUB_RUN_ID}" encrypted-result.bin --repo "$GITHUB_REPOSITORY" --target main --title 'Encrypted owner build result' --notes 'Authenticated encrypted build result. Application files and diagnostics are not published in plaintext.'
-      - name: Save encrypted recovery artifact
-        if: always() && steps.publish_result.outcome == 'failure'
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
-        with:
-          name: encrypted-owner-result-${{ github.run_id }}
-          path: encrypted-result.bin
-          retention-days: 1
-          if-no-files-found: error
+          gh release create "result-${GITHUB_RUN_ID}" encrypted-result.bin --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --title 'Encrypted owner build result' --notes 'Authenticated encrypted build result.'
