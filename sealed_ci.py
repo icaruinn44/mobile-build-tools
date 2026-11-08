@@ -33,7 +33,15 @@ def initialize():
 def run(stage):
     assert stage in {'deps','startup','sign','archive','upload'}
     script=SOURCE/'ci/run_sealed_candidate.sh'
-    script.write_bytes(script.read_bytes().replace(b'\r\n',b'\n'))
+    content=script.read_bytes().replace(b'\r\n',b'\n').decode()
+    if stage=='sign':
+        content=content.replace('from cryptography.hazmat.primitives.serialization import pkcs12,Encoding',
+            'from cryptography.hazmat.primitives.serialization import pkcs12,Encoding,PrivateFormat\nfrom cryptography.hazmat.primitives import hashes')
+        old="keyfile.write_bytes(base64.b64decode(os.environ['IOS_CERTIFICATE_BASE64']))"
+        new="keyfile.write_bytes(pkcs12.serialize_key_and_certificates(b'Distribution',key,certificate,None,PrivateFormat.PKCS12.encryption_builder().kdf_rounds(50000).key_cert_algorithm(pkcs12.PBES.PBESv1SHA1And3KeyTripleDESCBC).hmac_hash(hashes.SHA1()).build(os.environ['PAYLOAD_KEY'].encode())))"
+        assert content.count(old)==1
+        content=content.replace(old,new).replace('keychain add-certificates\n','keychain add-certificates --certificate-password @env:PAYLOAD_KEY\n')
+    script.write_bytes(content.encode())
     LOGS.mkdir(exist_ok=True)
     with (LOGS/(stage+'.log')).open('wb') as output:
         result=subprocess.run(['bash','ci/run_sealed_candidate.sh',stage],cwd=SOURCE,stdout=output,stderr=subprocess.STDOUT)
