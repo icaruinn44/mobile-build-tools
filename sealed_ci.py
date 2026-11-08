@@ -32,6 +32,8 @@ def initialize():
     print('Authenticated private build input opened.')
 def run(stage):
     assert stage in {'deps','startup','sign','archive','upload'}
+    script=SOURCE/'ci/run_sealed_candidate.sh'
+    script.write_bytes(script.read_bytes().replace(b'\r\n',b'\n'))
     LOGS.mkdir(exist_ok=True)
     with (LOGS/(stage+'.log')).open('wb') as output:
         result=subprocess.run(['bash','ci/run_sealed_candidate.sh',stage],cwd=SOURCE,stdout=output,stderr=subprocess.STDOUT)
