@@ -2,7 +2,7 @@ name: Owner mobile archive
 on:
   workflow_dispatch:
 permissions:
-  contents: read
+  contents: write
 concurrency:
   group: owner-mobile-archive
   cancel-in-progress: false
@@ -49,9 +49,8 @@ jobs:
         run: python sealed_ci.py package
       - name: Save encrypted owner artifact
         if: always()
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
-        with:
-          name: encrypted-owner-result-${{ github.run_id }}
-          path: encrypted-result.bin
-          retention-days: 7
-          if-no-files-found: warn
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          test -f encrypted-result.bin
+          gh release create "result-${GITHUB_RUN_ID}" encrypted-result.bin --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --title 'Encrypted owner build result' --notes 'Authenticated encrypted build result. Application files and diagnostics are not published in plaintext.'
