@@ -1,10 +1,18 @@
 name: Owner mobile archive
 on:
   workflow_dispatch:
+    inputs:
+      mode:
+        description: Build or signing configuration check
+        type: choice
+        options:
+          - production
+          - signingcheck
+        default: production
 permissions:
   contents: write
 concurrency:
-  group: owner-mobile-archive
+  group: owner-mobile-${{ inputs.mode || 'production' }}
   cancel-in-progress: false
 jobs:
   archive:
@@ -37,12 +45,15 @@ jobs:
       - name: Resolve and verify application dependencies
         run: python sealed_ci.py deps
       - name: Verify native application startup
+        if: inputs.mode != 'signingcheck'
         run: python sealed_ci.py startup
       - name: Configure distribution signing
         run: python sealed_ci.py sign
       - name: Archive and verify distribution package
+        if: inputs.mode != 'signingcheck'
         run: python sealed_ci.py archive
       - name: Upload verified package to Apple
+        if: inputs.mode != 'signingcheck'
         run: python sealed_ci.py upload
       - name: Encrypt diagnostics and binary artifacts
         if: always()
