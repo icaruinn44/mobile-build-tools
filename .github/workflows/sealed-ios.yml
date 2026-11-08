@@ -13,7 +13,7 @@ jobs:
     timeout-minutes: 75
     env:
       PAYLOAD_KEY: ${{ secrets.MISTIK67_PAYLOAD_KEY }}
-      INPUT_SHA256: 767e124f630a45c04389e7b3abc982c2c40dc90a1b6ffa07e518039ff46562ee
+      INPUT_SHA256: 0a0ac63a4da4929fb5e26964750e445fe15051567b91bd4164ceab362a8419bd
       ASC_KEY_BASE64: ${{ secrets.MISTIK67_ASC_KEY_BASE64 }}
       ASC_KEY_ID: ${{ secrets.MISTIK67_ASC_KEY_ID }}
       ASC_ISSUER_ID: ${{ secrets.MISTIK67_ASC_ISSUER_ID }}
@@ -21,6 +21,8 @@ jobs:
       IOS_CERTIFICATE_PASSWORD: ''
       BUNDLE_ID: com.mistikdevelopment.mistik
       APPLE_TEAM_ID: 4J4H8P56ZW
+      REVIEW_CONFIG_BASE64: ${{ secrets.MISTIK67_REVIEW_CONFIG_BASE64 }}
+      CI_APP_CHECK_DEBUG_TOKEN: ${{ secrets.MISTIK67_APP_CHECK_DEBUG_TOKEN }}
       BUILD_NAME: 6.1.4
       BUILD_NUMBER: '67'
     steps:
