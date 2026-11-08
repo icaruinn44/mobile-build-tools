@@ -36,7 +36,8 @@ def run(stage):
     assert stage in STAGES
     LOGS.mkdir(exist_ok=True)
     with (LOGS/(stage+'.log')).open('wb') as log:
-        result=subprocess.run(['bash','ci/run_sealed_candidate.sh',stage],cwd=SOURCE,stdout=log,stderr=subprocess.STDOUT)
+        command=[sys.executable,str(ROOT/'signing.py')] if stage=='sign' else ['bash','ci/run_sealed_candidate.sh',stage]
+        result=subprocess.run(command,cwd=SOURCE,stdout=log,stderr=subprocess.STDOUT)
     print(stage+': '+('passed' if result.returncode==0 else 'failed; detailed diagnostics are encrypted'))
     raise SystemExit(result.returncode)
 def package():
