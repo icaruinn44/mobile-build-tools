@@ -1,0 +1,57 @@
+name: Owner mobile archive
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: owner-mobile-archive
+  cancel-in-progress: false
+jobs:
+  archive:
+    if: github.repository == 'icaruinn44/mobile-build-tools' && github.actor == 'icaruinn44' && github.ref == 'refs/heads/main'
+    runs-on: macos-26
+    timeout-minutes: 75
+    env:
+      PAYLOAD_KEY: ${{ secrets.PAYLOAD_KEY }}
+      INPUT_SHA256: ${{ vars.INPUT_SHA256 }}
+      ASC_KEY_BASE64: ${{ secrets.ASC_KEY_BASE64 }}
+      ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+      ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+      IOS_CERTIFICATE_BASE64: ${{ secrets.IOS_CERTIFICATE_BASE64 }}
+      IOS_CERTIFICATE_PASSWORD: ''
+      BUNDLE_ID: com.mistikdevelopment.mysticera
+      APPLE_TEAM_ID: 4J4H8P56ZW
+      BUILD_NAME: 1.0.28
+      BUILD_NUMBER: '30'
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: '3.12'
+      - name: Install verified build helpers
+        run: python -m pip install cryptography==50.0.2 codemagic-cli-tools==0.70.0 Pillow==12.0.0 PyJWT==2.10.1
+      - name: Open authenticated private input
+        run: python sealed_ci.py init
+      - name: Resolve and verify application dependencies
+        run: python sealed_ci.py deps
+      - name: Verify native application startup
+        run: python sealed_ci.py startup
+      - name: Configure distribution signing
+        run: python sealed_ci.py sign
+      - name: Archive and verify distribution package
+        run: python sealed_ci.py archive
+      - name: Upload verified package to Apple
+        run: python sealed_ci.py upload
+      - name: Encrypt diagnostics and binary artifacts
+        if: always()
+        run: python sealed_ci.py package
+      - name: Save encrypted owner artifact
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: encrypted-owner-result-${{ github.run_id }}
+          path: encrypted-result.bin
+          retention-days: 7
+          if-no-files-found: warn
