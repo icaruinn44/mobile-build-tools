@@ -12,7 +12,7 @@ def crypto():
     assert len(key)==32
     return AESGCM(key)
 def initialize():
-    url='https://github.com/icaruinn44/mobile-build-tools/releases/download/input-20261108/sealed-input.bin'
+    url='https://github.com/icaruinn44/mobile-build-tools/releases/download/input-judge52-20261108/sealed-input.bin'
     with urllib.request.urlopen(url,timeout=120) as response: data=response.read()
     assert hashlib.sha256(data).hexdigest()==os.environ['INPUT_SHA256']
     assert data[:9]==b'MOBILECI1'

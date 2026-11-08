@@ -1,36 +1,28 @@
 name: Owner mobile archive
 on:
   workflow_dispatch:
-    inputs:
-      mode:
-        description: Build or signing configuration check
-        type: choice
-        options:
-          - production
-          - signingcheck
-        default: production
 permissions:
   contents: write
 concurrency:
-  group: owner-mobile-${{ inputs.mode || 'production' }}
+  group: owner-mobile-archive-judge52
   cancel-in-progress: false
 jobs:
   archive:
-    if: github.repository == 'icaruinn44/mobile-build-tools' && github.actor == 'icaruinn44' && github.ref == 'refs/heads/main'
+    if: github.repository == 'icaruinn44/mobile-build-tools' && github.actor == 'icaruinn44' && github.ref == 'refs/heads/portfolio-judge52-20261108'
     runs-on: macos-26
     timeout-minutes: 75
     env:
-      PAYLOAD_KEY: ${{ secrets.PAYLOAD_KEY }}
-      INPUT_SHA256: ${{ vars.INPUT_SHA256 }}
+      PAYLOAD_KEY: ${{ secrets.JUDGE52_PAYLOAD_KEY }}
+      INPUT_SHA256: f30b5192af68db224a8671c71c31a192372fc00ddf07c7ba718138583592e6dd
       ASC_KEY_BASE64: ${{ secrets.ASC_KEY_BASE64 }}
       ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
       ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
-      IOS_CERTIFICATE_BASE64: ${{ secrets.IOS_CERTIFICATE_BASE64 }}
+      IOS_CERTIFICATE_BASE64: ${{ secrets.JUDGE52_CERTIFICATE_BASE64 }}
       IOS_CERTIFICATE_PASSWORD: ''
-      BUNDLE_ID: com.mistikdevelopment.mysticera
+      BUNDLE_ID: com.mistikdevelopment.judgegame
       APPLE_TEAM_ID: 4J4H8P56ZW
-      BUILD_NAME: 1.0.28
-      BUILD_NUMBER: '30'
+      BUILD_NAME: 3.8.11
+      BUILD_NUMBER: '52'
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
         with:
@@ -44,16 +36,13 @@ jobs:
         run: python sealed_ci.py init
       - name: Resolve and verify application dependencies
         run: python sealed_ci.py deps
-      - name: Verify native application startup
-        if: inputs.mode != 'signingcheck'
+      - name: Verify privacy contracts and app regressions
         run: python sealed_ci.py startup
       - name: Configure distribution signing
         run: python sealed_ci.py sign
       - name: Archive and verify distribution package
-        if: inputs.mode != 'signingcheck'
         run: python sealed_ci.py archive
       - name: Upload verified package to Apple
-        if: inputs.mode != 'signingcheck'
         run: python sealed_ci.py upload
       - name: Encrypt diagnostics and binary artifacts
         if: always()
@@ -64,4 +53,4 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           test -f encrypted-result.bin
-          gh release create "result-${GITHUB_RUN_ID}" encrypted-result.bin --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --title 'Encrypted owner build result' --notes 'Authenticated encrypted build result. Application files and diagnostics are not published in plaintext.'
+          gh release create "result-${GITHUB_RUN_ID}" encrypted-result.bin --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --title 'Encrypted owner build result' --notes 'Authenticated encrypted build result.'
