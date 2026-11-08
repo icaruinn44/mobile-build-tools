@@ -18,7 +18,7 @@ def cipher():
     assert len(key)==32
     return AESGCM(key)
 def initialize():
-    url='https://github.com/icaruinn44/mobile-build-tools/releases/download/input-mistik67-20261109-v5/sealed-mistik67-input-v5.bin'
+    url='https://github.com/icaruinn44/mobile-build-tools/releases/download/input-mistik67-20261109-v11/sealed-mistik67-input-v11.bin'
     with urllib.request.urlopen(url,timeout=120) as response:data=response.read()
     assert hashlib.sha256(data).hexdigest()==os.environ['INPUT_SHA256'] and data[:9]==b'MOBILECI1'
     plain=cipher().decrypt(data[9:21],data[21:],b'mobile-ci-input-v1')
@@ -44,9 +44,35 @@ def run(stage):
     script.write_bytes(content.encode())
     LOGS.mkdir(exist_ok=True)
     with (LOGS/(stage+'.log')).open('wb') as output:
-        result=subprocess.run(['bash','ci/run_sealed_candidate.sh',stage],cwd=SOURCE,stdout=output,stderr=subprocess.STDOUT)
-    print(stage+': '+('passed' if result.returncode==0 else 'failed; details are encrypted'))
-    raise SystemExit(result.returncode)
+        child=subprocess.Popen(['bash','ci/run_sealed_candidate.sh',stage],cwd=SOURCE,stdout=output,stderr=subprocess.STDOUT)
+        elapsed=0
+        while True:
+            try:
+                code=child.wait(timeout=120)
+                break
+            except subprocess.TimeoutExpired:
+                elapsed+=2
+                print(stage+': still running ('+str(elapsed)+' minutes)',flush=True)
+                try:checkpoint(stage,elapsed)
+                except Exception:print('Encrypted checkpoint unavailable; primary task continues.',flush=True)
+    print(stage+': '+('passed' if code==0 else 'failed; details are encrypted'))
+    raise SystemExit(code)
+def checkpoint(stage,elapsed):
+    if not os.environ.get('GH_TOKEN'):return
+    buffer=io.BytesIO()
+    with zipfile.ZipFile(buffer,'w',compression=zipfile.ZIP_DEFLATED,compresslevel=3) as archive:
+        for folder,prefix in [(LOGS,'logs'),(SOURCE/'ios-evidence','evidence')]:
+            if folder.exists():
+                for file in folder.rglob('*'):
+                    if file.is_file() and file.stat().st_size<20000000:
+                        archive.writestr(prefix+'/'+file.relative_to(folder).as_posix(),file.read_bytes())
+    nonce=os.urandom(12)
+    target=ROOT/'encrypted-checkpoint.bin'
+    target.write_bytes(b'MOBILER1'+nonce+cipher().encrypt(nonce,buffer.getvalue(),b'mobile-ci-result-v1'))
+    tag='checkpoint-'+os.environ['GITHUB_RUN_ID']+'-'+stage+'-'+str(elapsed)
+    result=subprocess.run(['gh','release','create',tag,str(target),'--repo',os.environ['GITHUB_REPOSITORY'],'--target',os.environ['GITHUB_SHA'],'--title','Encrypted owner build checkpoint','--notes','Authenticated encrypted owner diagnostics.'],stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL,timeout=90)
+    print('Encrypted checkpoint '+('saved.' if result.returncode==0 else 'not saved.'),flush=True)
+
 def package():
     buffer=io.BytesIO()
     with zipfile.ZipFile(buffer,'w',compression=zipfile.ZIP_DEFLATED,compresslevel=3) as archive:

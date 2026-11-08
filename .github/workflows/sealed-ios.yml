@@ -10,10 +10,11 @@ jobs:
   archive:
     if: github.repository == 'icaruinn44/mobile-build-tools' && github.actor == 'icaruinn44' && github.ref == 'refs/heads/portfolio-mistik67-20261109'
     runs-on: macos-26
-    timeout-minutes: 75
+    timeout-minutes: 120
     env:
+      GH_TOKEN: ${{ github.token }}
       PAYLOAD_KEY: ${{ secrets.MISTIK67_PAYLOAD_KEY }}
-      INPUT_SHA256: 240b10426dea45754c44f363ca28d698abc5eca66995ad12de22ab7f94413450
+      INPUT_SHA256: 92e5e04275b154372b648511b3fe5d8bf960cf6932a0f3ee6f584178c90f67ec
       ASC_KEY_BASE64: ${{ secrets.MISTIK67_ASC_KEY_BASE64 }}
       ASC_KEY_ID: ${{ secrets.MISTIK67_ASC_KEY_ID }}
       ASC_ISSUER_ID: ${{ secrets.MISTIK67_ASC_ISSUER_ID }}
