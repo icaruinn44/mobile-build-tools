@@ -23,6 +23,13 @@ def initialize():
             path=(SOURCE/entry.filename).resolve()
             assert path.is_relative_to(SOURCE.resolve()) and not (entry.external_attr>>16)&0o170000==0o120000
         z.extractall(SOURCE)
+    # Archives produced on Windows can apply core.autocrlf checkout conversion.
+    # Native shell build phases require Unix line endings, as on a Mac checkout.
+    for folder in (SOURCE/'ci', SOURCE/'ios/scripts'):
+        if folder.exists():
+            for script in folder.rglob('*.sh'):
+                content=script.read_bytes()
+                if b'\r\n' in content: script.write_bytes(content.replace(b'\r\n',b'\n'))
     LOGS.mkdir(exist_ok=True)
     print('Encrypted build input authenticated and opened.')
 def run(stage):
