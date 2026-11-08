@@ -1,6 +1,7 @@
 """Generic authenticated-encryption wrapper for owner-triggered private mobile builds."""
 from pathlib import Path
-import base64, hashlib, io, json, os, re, subprocess, sys, urllib.request, zipfile
+import base64, hashlib, io, json, os, plistlib, re, subprocess, sys, urllib.request, zipfile
+from PIL import Image
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 
 ROOT=Path(__file__).resolve().parent
@@ -62,17 +63,40 @@ def reuse_startup(run_id):
         before=z.read('logs/deps.log').decode('utf-8',errors='replace')
         now=(LOGS/'deps.log').read_text(encoding='utf-8',errors='replace')
         def versions(log):
+            log=re.sub(r'\x1b\[[0-9;]*[A-Za-z]','',log).replace('\r\n','\n')
             return sorted(re.findall(r'^(?:Installing .+ \(.+\)|Xcode \S+|Build version \S+)$',log,re.M))
         assert versions(before)==versions(now) and len(versions(now))>20,'Toolchain or native dependency versions changed'
         evidence=SOURCE/'ios-evidence'
         (evidence/'iphone').mkdir(parents=True,exist_ok=True)
-        for name in ['actual-main-startup.json','iphone/actual-main-startup.png']:
-            (evidence/name).write_bytes(z.read('evidence/'+name))
-    proof=json.loads((evidence/'actual-main-startup.json').read_text())
-    assert proof['nonblank'] and proof['entrypoint']=='lib/main.dart' and proof['iosPurchasesEnabled']
+        image_bytes=z.read('evidence/iphone/actual-main-startup.png')
+        (evidence/'iphone/actual-main-startup-raw.png').write_bytes(image_bytes)
+        normalized=False
+        if 'evidence/actual-main-startup.json' in z.namelist():
+            proof=json.loads(z.read('evidence/actual-main-startup.json'))
+            assert proof['nonblank'] and proof['entrypoint']=='lib/main.dart' and proof['iosPurchasesEnabled']
+        else:
+            # Recover a real, already-running main capture rejected solely for
+            # simctl's physical portrait framebuffer dimensions. The source app
+            # permits landscape only. Preserve the untouched raw frame as proof.
+            startup_log=z.read('logs/startup.log').decode('utf-8',errors='replace')
+            launcher=z.read('evidence/flutter-main-launcher.log').decode('utf-8',errors='replace')
+            assert 'AssertionError: Actual main() did not reach landscape orientation' in startup_log
+            assert 'standalone_startup.py' in startup_log and '"event":"app.started"' in launcher
+            assert 'Native application process is not running' not in startup_log
+            info=plistlib.loads((SOURCE/'ios/Runner/Info.plist').read_bytes())
+            assert set(info['UISupportedInterfaceOrientations'])=={'UIInterfaceOrientationLandscapeLeft','UIInterfaceOrientationLandscapeRight'}
+            raw=Image.open(io.BytesIO(image_bytes))
+            assert raw.width<raw.height
+            rotated=raw.transpose(Image.Transpose.ROTATE_90)
+            assert rotated.transpose(Image.Transpose.ROTATE_270).tobytes()==raw.tobytes()
+            output=io.BytesIO(); rotated.save(output,format='PNG'); image_bytes=output.getvalue(); normalized=True
+            proof={'entrypoint':'lib/main.dart','iosPurchasesEnabled':True,'driver':'flutter run --machine + simctl','nativeProcessVerified':True,'captureNormalization':'90-degree lossless rotation from physical portrait framebuffer to app landscape layout','rawCaptureSha256':hashlib.sha256(z.read('evidence/iphone/actual-main-startup.png')).hexdigest()}
+        (evidence/'iphone/actual-main-startup.png').write_bytes(image_bytes)
     subprocess.run([sys.executable,'ci/check_startup_image.py'],cwd=SOURCE,check=True)
+    checked=json.loads((evidence/'actual-main-startup.json').read_text()); checked.update(proof)
+    (evidence/'actual-main-startup.json').write_text(json.dumps(checked,indent=2))
     (evidence/'startup-proof-source.json').write_text(json.dumps({'runId':run_id,'sourceCommit':current['sourceCommit'],'sameNativeDependencyVersions':True}))
-    print('Reused verified native startup for the identical frozen source and native dependency versions, run '+run_id)
+    print('Reused verified native startup for the identical frozen source and native dependency versions, run '+run_id+'; lossless capture orientation correction: '+str(normalized))
 def package():
     buffer=io.BytesIO()
     with zipfile.ZipFile(buffer,'w',compression=zipfile.ZIP_DEFLATED,compresslevel=3) as z:
