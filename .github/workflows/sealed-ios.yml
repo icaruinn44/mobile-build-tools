@@ -9,6 +9,10 @@ on:
           - production
           - signingcheck
         default: production
+      startup_proof_run:
+        description: Optional earlier passing native startup run for the identical frozen input
+        type: string
+        default: ''
 permissions:
   contents: write
 concurrency:
@@ -31,6 +35,7 @@ jobs:
       APPLE_TEAM_ID: 4J4H8P56ZW
       BUILD_NAME: 1.0.28
       BUILD_NUMBER: '30'
+      VERIFIED_STARTUP_RUN: ${{ inputs.startup_proof_run }}
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
         with:
