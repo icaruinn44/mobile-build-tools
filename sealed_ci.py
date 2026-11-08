@@ -1,6 +1,6 @@
 """Generic authenticated-encryption wrapper for owner-triggered private mobile builds."""
 from pathlib import Path
-import base64, hashlib, io, json, os, subprocess, sys, urllib.request, zipfile
+import base64, hashlib, io, json, os, re, subprocess, sys, urllib.request, zipfile
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 
 ROOT=Path(__file__).resolve().parent
@@ -12,7 +12,7 @@ def crypto():
     assert len(key)==32
     return AESGCM(key)
 def initialize():
-    url='https://github.com/icaruinn44/mobile-build-tools/releases/download/input-judge52-20261108/sealed-input.bin'
+    url='https://github.com/icaruinn44/mobile-build-tools/releases/download/input-judge52-20261108-v2/sealed-input-v2.bin'
     with urllib.request.urlopen(url,timeout=120) as response: data=response.read()
     assert hashlib.sha256(data).hexdigest()==os.environ['INPUT_SHA256']
     assert data[:9]==b'MOBILECI1'
@@ -36,9 +36,37 @@ def run(stage):
     assert stage in STAGES
     LOGS.mkdir(exist_ok=True)
     with (LOGS/(stage+'.log')).open('wb') as log:
-        result=subprocess.run(['bash','ci/run_sealed_candidate.sh',stage],cwd=SOURCE,stdout=log,stderr=subprocess.STDOUT)
+        if stage=='startup' and os.environ.get('VERIFIED_STARTUP_RUN'):
+            command=[sys.executable,str(ROOT/'sealed_ci.py'),'reuse-startup',os.environ['VERIFIED_STARTUP_RUN']]
+        else:
+            command=[sys.executable,str(ROOT/'signing.py')] if stage=='sign' else ['bash','ci/run_sealed_candidate.sh',stage]
+        result=subprocess.run(command,cwd=SOURCE,stdout=log,stderr=subprocess.STDOUT)
     print(stage+': '+('passed' if result.returncode==0 else 'failed; detailed diagnostics are encrypted'))
     raise SystemExit(result.returncode)
+def reuse_startup(run_id):
+    assert re.fullmatch(r'\d+',run_id)
+    url='https://github.com/icaruinn44/mobile-build-tools/releases/download/result-'+run_id+'/encrypted-result.bin'
+    with urllib.request.urlopen(url,timeout=120) as response: data=response.read()
+    assert data[:8]==b'MOBILER1'
+    plain=crypto().decrypt(data[8:20],data[20:],b'mobile-ci-result-v1')
+    current=json.loads((SOURCE/'ci/candidate-metadata.json').read_text())
+    with zipfile.ZipFile(io.BytesIO(plain)) as z:
+        previous=json.loads(z.read('candidate-metadata.json'))
+        assert previous==current,'A startup proof may only be reused for the identical frozen candidate'
+        before=z.read('logs/deps.log').decode('utf-8',errors='replace')
+        now=(LOGS/'deps.log').read_text(encoding='utf-8',errors='replace')
+        def versions(log):
+            return sorted(re.findall(r'^(?:Installing .+ \(.+\)|Xcode \S+|Build version \S+)$',log,re.M))
+        assert versions(before)==versions(now) and len(versions(now))>20,'Toolchain or native dependency versions changed'
+        evidence=SOURCE/'ios-evidence'
+        (evidence/'iphone').mkdir(parents=True,exist_ok=True)
+        for name in ['actual-main-startup.json','iphone/actual-main-startup.png']:
+            (evidence/name).write_bytes(z.read('evidence/'+name))
+    proof=json.loads((evidence/'actual-main-startup.json').read_text())
+    assert proof['nonblank'] and proof['entrypoint']=='lib/main.dart' and proof['iosPurchasesEnabled']
+    subprocess.run([sys.executable,'ci/check_startup_image.py'],cwd=SOURCE,check=True)
+    (evidence/'startup-proof-source.json').write_text(json.dumps({'runId':run_id,'sourceCommit':current['sourceCommit'],'sameNativeDependencyVersions':True}))
+    print('Reused verified native startup for the identical frozen source and native dependency versions, run '+run_id)
 def package():
     buffer=io.BytesIO()
     with zipfile.ZipFile(buffer,'w',compression=zipfile.ZIP_DEFLATED,compresslevel=3) as z:
@@ -55,4 +83,5 @@ def package():
 if __name__=='__main__':
     if sys.argv[1]=='init': initialize()
     elif sys.argv[1]=='package': package()
+    elif sys.argv[1]=='reuse-startup': reuse_startup(sys.argv[2])
     else: run(sys.argv[1])

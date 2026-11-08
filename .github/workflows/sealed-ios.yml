@@ -13,7 +13,7 @@ jobs:
     timeout-minutes: 75
     env:
       PAYLOAD_KEY: ${{ secrets.JUDGE52_PAYLOAD_KEY }}
-      INPUT_SHA256: f30b5192af68db224a8671c71c31a192372fc00ddf07c7ba718138583592e6dd
+      INPUT_SHA256: 2c5b0392415932b2a620028bdb03cafe4b32537a64f95ddf070778d922bad2d1
       ASC_KEY_BASE64: ${{ secrets.ASC_KEY_BASE64 }}
       ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
       ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
