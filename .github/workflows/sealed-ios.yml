@@ -14,7 +14,7 @@ jobs:
     env:
       GH_TOKEN: ${{ github.token }}
       PAYLOAD_KEY: ${{ secrets.MISTIK67_PAYLOAD_KEY }}
-      INPUT_SHA256: 048bd000665b07f062afc23376fe8bdf16a9aabfdb9344f5dd4242ff8b48a160
+      INPUT_SHA256: 0a9f3deb4acfa63a9652ba4d71ef95d571ebe1727e8bc22b80166a9644046d5b
       ASC_KEY_BASE64: ${{ secrets.MISTIK67_ASC_KEY_BASE64 }}
       ASC_KEY_ID: ${{ secrets.MISTIK67_ASC_KEY_ID }}
       ASC_ISSUER_ID: ${{ secrets.MISTIK67_ASC_ISSUER_ID }}
