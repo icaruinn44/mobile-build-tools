@@ -38,10 +38,16 @@ def run(stage):
     with (LOGS/(stage+'.log')).open('wb') as log:
         if stage=='startup' and os.environ.get('VERIFIED_STARTUP_RUN'):
             command=[sys.executable,str(ROOT/'sealed_ci.py'),'reuse-startup',os.environ['VERIFIED_STARTUP_RUN']]
+        elif stage=='startup' and os.environ.get('STARTUP_METHOD')=='standalone':
+            command=[sys.executable,str(ROOT/'standalone_startup.py')]
         else:
             command=[sys.executable,str(ROOT/'signing.py')] if stage=='sign' else ['bash','ci/run_sealed_candidate.sh',stage]
         result=subprocess.run(command,cwd=SOURCE,stdout=log,stderr=subprocess.STDOUT)
     print(stage+': '+('passed' if result.returncode==0 else 'failed; detailed diagnostics are encrypted'))
+    if result.returncode:
+        log=(LOGS/(stage+'.log')).read_text(encoding='utf-8',errors='replace')
+        categories=[('Native main-app startup image is blank','BLANK_NATIVE_FRAME'),('did not reach landscape','ORIENTATION_NOT_LANDSCAPE'),('TimeoutException after 0:00:15','FIRST_FRAME_WAIT_TIMEOUT'),('did not progress past the startup splash','BOOTSTRAP_TIMEOUT'),('MAC verification failed','CERTIFICATE_IMPORT_FORMAT'),('Could not build the application','NATIVE_COMPILATION_FAILED'),('Native application process is not running','NATIVE_PROCESS_STOPPED'),('Normal Flutter launcher exited','FLUTTER_LAUNCH_FAILED')]
+        print('Failure category: '+next((code for pattern,code in categories if pattern in log),'OTHER_ENCRYPTED_DIAGNOSTIC'))
     raise SystemExit(result.returncode)
 def reuse_startup(run_id):
     assert re.fullmatch(r'\d+',run_id)

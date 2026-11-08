@@ -13,6 +13,13 @@ on:
         description: Optional earlier passing native startup run for the identical frozen input
         type: string
         default: ''
+      startup_method:
+        description: Native main startup verification method
+        type: choice
+        options:
+          - integration
+          - standalone
+        default: integration
 permissions:
   contents: write
 concurrency:
@@ -36,6 +43,7 @@ jobs:
       BUILD_NAME: 1.0.28
       BUILD_NUMBER: '30'
       VERIFIED_STARTUP_RUN: ${{ inputs.startup_proof_run }}
+      STARTUP_METHOD: ${{ inputs.startup_method }}
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
         with:
@@ -64,9 +72,19 @@ jobs:
         if: always()
         run: python sealed_ci.py package
       - name: Save encrypted owner artifact
+        id: publish_result
         if: always()
+        continue-on-error: true
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           test -f encrypted-result.bin
-          gh release create "result-${GITHUB_RUN_ID}" encrypted-result.bin --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --title 'Encrypted owner build result' --notes 'Authenticated encrypted build result. Application files and diagnostics are not published in plaintext.'
+          gh release create "result-${GITHUB_RUN_ID}" encrypted-result.bin --repo "$GITHUB_REPOSITORY" --target main --title 'Encrypted owner build result' --notes 'Authenticated encrypted build result. Application files and diagnostics are not published in plaintext.'
+      - name: Save encrypted recovery artifact
+        if: always() && steps.publish_result.outcome == 'failure'
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: encrypted-owner-result-${{ github.run_id }}
+          path: encrypted-result.bin
+          retention-days: 1
+          if-no-files-found: error
