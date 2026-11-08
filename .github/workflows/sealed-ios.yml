@@ -13,7 +13,7 @@ jobs:
     timeout-minutes: 20
     env:
       PAYLOAD_KEY: ${{ secrets.MISTIK67_PAYLOAD_KEY }}
-      INPUT_SHA256: 75c0355c9380b72ec6dbe8d5d7bf6cb6a1eff54f06c92a41d7775dea1aefc85c
+      INPUT_SHA256: 796c036132fca834fb11e99e026b188e501e68b16406b2b815fe5c294b6367e0
       ASC_KEY_BASE64: ${{ secrets.MISTIK67_ASC_KEY_BASE64 }}
       ASC_KEY_ID: ${{ secrets.MISTIK67_ASC_KEY_ID }}
       ASC_ISSUER_ID: ${{ secrets.MISTIK67_ASC_ISSUER_ID }}
