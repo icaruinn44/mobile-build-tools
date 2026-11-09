@@ -25,7 +25,7 @@ jobs:
           python-version: '3.12'
       - run: python -m pip install cryptography==50.0.2
       - name: Upload exact verified distribution package
-        run: python mistik_upload_only.py
+        run: python mistik68_upload_only.py
       - name: Save encrypted upload evidence
         if: always()
         env:
