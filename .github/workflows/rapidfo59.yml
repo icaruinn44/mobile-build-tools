@@ -1,0 +1,54 @@
+name: Rapidfo free iOS hotfix
+on:
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: rapidfo-hotfix59
+  cancel-in-progress: false
+jobs:
+  archive:
+    if: github.repository == 'icaruinn44/mobile-build-tools' && github.actor == 'icaruinn44' && github.ref == 'refs/heads/rapidfo-hotfix59-20261109'
+    runs-on: macos-26
+    timeout-minutes: 60
+    env:
+      PAYLOAD_KEY: ${{ secrets.RAPIDFO59_PAYLOAD_KEY }}
+      INPUT_SHA256: 3e1e50b500510431140418de1dcf950a90122098de5b2b48766cc2c621fa6184
+      ASC_KEY_BASE64: ${{ secrets.RAPIDFO59_ASC_KEY_BASE64 }}
+      ASC_KEY_ID: ${{ secrets.RAPIDFO59_ASC_KEY_ID }}
+      ASC_ISSUER_ID: ${{ secrets.RAPIDFO59_ASC_ISSUER_ID }}
+      IOS_CERTIFICATE_BASE64: ${{ secrets.JUDGE52_CERTIFICATE_BASE64 }}
+      IOS_CERTIFICATE_PASSWORD: ''
+      BUNDLE_ID: com.mistikdevelopment.hizliokuma
+      APPLE_TEAM_ID: 4J4H8P56ZW
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: '3.12'
+      - name: Install build helpers
+        run: python -m pip install cryptography==50.0.2 codemagic-cli-tools==0.70.0 Pillow==12.0.0 PyJWT==2.10.1
+      - name: Open authenticated source
+        run: python sealed_ci.py init
+      - name: Resolve dependencies and verify source
+        run: python sealed_ci.py deps
+      - name: Test recovery and native startup
+        run: python sealed_ci.py startup
+      - name: Configure verified signing
+        run: python sealed_ci.py sign
+      - name: Archive and verify IPA
+        run: python sealed_ci.py archive
+      - name: Upload verified IPA to Apple
+        run: python sealed_ci.py upload
+      - name: Encrypt build evidence
+        if: always()
+        run: python sealed_ci.py package
+      - name: Save encrypted result
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          test -f encrypted-result.bin
+          gh release create "result-${GITHUB_RUN_ID}" encrypted-result.bin --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --title 'Encrypted owner build result' --notes 'Authenticated encrypted build result.'

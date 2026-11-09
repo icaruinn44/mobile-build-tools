@@ -13,7 +13,7 @@ def crypto():
     assert len(key)==32
     return AESGCM(key)
 def initialize():
-    url='https://github.com/icaruinn44/mobile-build-tools/releases/download/input-20261108/sealed-input.bin'
+    url='https://github.com/icaruinn44/mobile-build-tools/releases/download/input-rapidfo59-20261109/sealed-input.bin'
     with urllib.request.urlopen(url,timeout=120) as response: data=response.read()
     assert hashlib.sha256(data).hexdigest()==os.environ['INPUT_SHA256']
     assert data[:9]==b'MOBILECI1'
@@ -66,7 +66,7 @@ def reuse_startup(run_id):
             log=re.sub(r'\x1b\[[0-9;]*[A-Za-z]','',log).replace('\r\n','\n')
             return sorted(re.findall(r'^(?:Installing .+ \(.+\)|Xcode \S+|Build version \S+)$',log,re.M))
         assert versions(before)==versions(now) and len(versions(now))>20,'Toolchain or native dependency versions changed'
-        evidence=SOURCE/'ios-evidence'
+        evidence=SOURCE/'ios-release-evidence'
         (evidence/'iphone').mkdir(parents=True,exist_ok=True)
         image_bytes=z.read('evidence/iphone/actual-main-startup.png')
         (evidence/'iphone/actual-main-startup-raw.png').write_bytes(image_bytes)
@@ -100,7 +100,7 @@ def reuse_startup(run_id):
 def package():
     buffer=io.BytesIO()
     with zipfile.ZipFile(buffer,'w',compression=zipfile.ZIP_DEFLATED,compresslevel=3) as z:
-        for folder,prefix in [(LOGS,'logs'),(SOURCE/'ios-evidence','evidence'),(SOURCE/'build/ios/ipa','ipa')]:
+        for folder,prefix in [(LOGS,'logs'),(SOURCE/'ios-release-evidence','evidence'),(SOURCE/'build/ios/ipa','ipa')]:
             if folder.exists():
                 for f in folder.rglob('*'):
                     if f.is_file(): z.write(f,prefix+'/'+f.relative_to(folder).as_posix())

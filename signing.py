@@ -16,7 +16,8 @@ meta=json.loads(Path('ci/candidate-metadata.json').read_text())
 assert profile['UUID']==meta['profileUuid'] and cert.public_bytes(Encoding.DER) in profile['DeveloperCertificates']
 assert profile['TeamIdentifier']==[os.environ['APPLE_TEAM_ID']]
 assert profile['Entitlements']['application-identifier']==os.environ['APPLE_TEAM_ID']+'.'+os.environ['BUNDLE_ID']
-assert 'production' in profile['Entitlements']['com.apple.developer.devicecheck.appattest-environment']
+assert profile['Entitlements']['aps-environment']=='production'
+assert profile['Entitlements']['com.apple.developer.applesignin']==['Default']
 run('keychain','initialize')
 for folder in ['Certificates','Provisioning Profiles']:
     (Path.home()/'Library/MobileDevice'/folder).mkdir(parents=True,exist_ok=True)
