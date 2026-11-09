@@ -4,7 +4,7 @@ on:
 permissions:
   contents: write
 concurrency:
-  group: owner-mobile-evidence-mistik67
+  group: owner-mobile-evidence-mistik68
   cancel-in-progress: false
 jobs:
   archive:
@@ -14,13 +14,13 @@ jobs:
     env:
       GH_TOKEN: ${{ github.token }}
       PAYLOAD_KEY: ${{ secrets.MISTIK67_PAYLOAD_KEY }}
-      INPUT_SHA256: 7da19243f8a65ecd698049a098b2b9ee5c4a33741557fa55779fd0ad40dd0351
+      INPUT_SHA256: da86158f3e9671d60e831db3f7fdc01d030c27a1f8cc2d6b5c249574b382f975
       BUNDLE_ID: com.mistikdevelopment.mistik
       APPLE_TEAM_ID: 4J4H8P56ZW
       REVIEW_CONFIG_BASE64: ${{ secrets.MISTIK67_REVIEW_CONFIG_BASE64 }}
       CI_APP_CHECK_DEBUG_TOKEN: ${{ secrets.MISTIK67_APP_CHECK_DEBUG_TOKEN }}
       BUILD_NAME: 6.1.4
-      BUILD_NUMBER: '67'
+      BUILD_NUMBER: '68'
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
         with:
