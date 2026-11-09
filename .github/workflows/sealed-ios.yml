@@ -14,7 +14,7 @@ jobs:
     env:
       GH_TOKEN: ${{ github.token }}
       PAYLOAD_KEY: ${{ secrets.MISTIK67_PAYLOAD_KEY }}
-      INPUT_SHA256: 300f8a977f7c4e0543ba854f877e340ed4094802adc647df367e3b6b0603b8c4
+      INPUT_SHA256: 3b73f57328ec8d6bbf04daf2414064852e0a9bfa347d55b09a6705488fd05b2c
       BUNDLE_ID: com.mistikdevelopment.mistik
       APPLE_TEAM_ID: 4J4H8P56ZW
       REVIEW_CONFIG_BASE64: ${{ secrets.MISTIK67_REVIEW_CONFIG_BASE64 }}
