@@ -18,7 +18,7 @@ def cipher():
     assert len(key)==32
     return AESGCM(key)
 def initialize():
-    url='https://github.com/icaruinn44/mobile-build-tools/releases/download/input-mistik67-20261109-v12/sealed-mistik67-input-v12.bin'
+    url='https://github.com/icaruinn44/mobile-build-tools/releases/download/input-mistik67-20261109-v14/sealed-mistik67-input-v14.bin'
     with urllib.request.urlopen(url,timeout=120) as response:data=response.read()
     assert hashlib.sha256(data).hexdigest()==os.environ['INPUT_SHA256'] and data[:9]==b'MOBILECI1'
     plain=cipher().decrypt(data[9:21],data[21:],b'mobile-ci-input-v1')
@@ -59,6 +59,10 @@ def run(stage):
     raise SystemExit(code)
 def checkpoint(stage,elapsed):
     if not os.environ.get('GH_TOKEN'):return
+    if stage=='startup':
+        target=SOURCE/'ios-evidence'/('diagnostic-simulator-'+str(elapsed)+'.png')
+        try:subprocess.run(['xcrun','simctl','io','booted','screenshot',str(target)],stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL,timeout=15)
+        except subprocess.TimeoutExpired:pass
     buffer=io.BytesIO()
     with zipfile.ZipFile(buffer,'w',compression=zipfile.ZIP_DEFLATED,compresslevel=3) as archive:
         for folder,prefix in [(LOGS,'logs'),(SOURCE/'ios-evidence','evidence')]:
