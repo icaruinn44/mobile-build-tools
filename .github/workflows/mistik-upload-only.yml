@@ -1,0 +1,33 @@
+name: Upload verified Mistik IPA
+on:
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: mistik-ios-exact-upload-20261109
+  cancel-in-progress: false
+jobs:
+  upload:
+    if: github.repository == 'icaruinn44/mobile-build-tools' && github.actor == 'icaruinn44' && github.ref == 'refs/heads/mistik-ios-upload-20261109'
+    runs-on: macos-26
+    timeout-minutes: 30
+    env:
+      PAYLOAD_KEY: ${{ secrets.MISTIK67_PAYLOAD_KEY }}
+      ASC_KEY_BASE64: ${{ secrets.MISTIK67_ASC_KEY_BASE64 }}
+      ASC_KEY_ID: ${{ secrets.MISTIK67_ASC_KEY_ID }}
+      ASC_ISSUER_ID: ${{ secrets.MISTIK67_ASC_ISSUER_ID }}
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: '3.12'
+      - run: python -m pip install cryptography==50.0.2
+      - name: Upload exact verified distribution package
+        run: python mistik_upload_only.py
+      - name: Save encrypted upload evidence
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create "result-${GITHUB_RUN_ID}" encrypted-result.bin --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --title 'Encrypted owner upload result' --notes 'Authenticated encrypted diagnostics; exact IPA uploaded without rebuild.'
