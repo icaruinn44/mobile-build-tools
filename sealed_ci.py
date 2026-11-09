@@ -44,6 +44,8 @@ def run(stage):
         else:
             command=[sys.executable,str(ROOT/'signing.py')] if stage=='sign' else ['bash','ci/run_sealed_candidate.sh',stage]
         result=subprocess.run(command,cwd=SOURCE,stdout=log,stderr=subprocess.STDOUT)
+        if stage=='archive' and result.returncode==0:
+            result=subprocess.run([sys.executable,str(ROOT/'verify_exported_ipa.py')],cwd=SOURCE,stdout=log,stderr=subprocess.STDOUT)
     print(stage+': '+('passed' if result.returncode==0 else 'failed; detailed diagnostics are encrypted'))
     if result.returncode:
         log=(LOGS/(stage+'.log')).read_text(encoding='utf-8',errors='replace')
