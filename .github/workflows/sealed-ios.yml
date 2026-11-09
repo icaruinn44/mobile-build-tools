@@ -9,12 +9,12 @@ concurrency:
 jobs:
   archive:
     if: github.repository == 'icaruinn44/mobile-build-tools' && github.actor == 'icaruinn44' && github.ref == 'refs/heads/mistik-ios-evidence-20261109'
-    runs-on: xcode-27
+    runs-on: macos-26
     timeout-minutes: 120
     env:
       GH_TOKEN: ${{ github.token }}
       PAYLOAD_KEY: ${{ secrets.MISTIK67_PAYLOAD_KEY }}
-      INPUT_SHA256: 3b73f57328ec8d6bbf04daf2414064852e0a9bfa347d55b09a6705488fd05b2c
+      INPUT_SHA256: 7da19243f8a65ecd698049a098b2b9ee5c4a33741557fa55779fd0ad40dd0351
       BUNDLE_ID: com.mistikdevelopment.mistik
       APPLE_TEAM_ID: 4J4H8P56ZW
       REVIEW_CONFIG_BASE64: ${{ secrets.MISTIK67_REVIEW_CONFIG_BASE64 }}
