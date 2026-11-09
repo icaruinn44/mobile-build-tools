@@ -10,10 +10,10 @@ jobs:
   archive:
     if: github.repository == 'icaruinn44/mobile-build-tools' && github.actor == 'icaruinn44' && github.ref == 'refs/heads/rapidfo-hotfix59-20261109'
     runs-on: macos-26
-    timeout-minutes: 60
+    timeout-minutes: 90
     env:
       PAYLOAD_KEY: ${{ secrets.RAPIDFO59_PAYLOAD_KEY }}
-      INPUT_SHA256: 3e1e50b500510431140418de1dcf950a90122098de5b2b48766cc2c621fa6184
+      INPUT_SHA256: 20b8f8e7772dfa71144cf7f9f5c68a86725b6227bffaa9848be8fa854239d7df
       ASC_KEY_BASE64: ${{ secrets.RAPIDFO59_ASC_KEY_BASE64 }}
       ASC_KEY_ID: ${{ secrets.RAPIDFO59_ASC_KEY_ID }}
       ASC_ISSUER_ID: ${{ secrets.RAPIDFO59_ASC_ISSUER_ID }}
