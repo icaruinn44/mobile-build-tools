@@ -4,7 +4,7 @@ on:
 permissions:
   contents: write
 concurrency:
-  group: owner-mobile-archive-only-mistik67
+  group: owner-mobile-archive-only-mistik68
   cancel-in-progress: false
 jobs:
   archive:
@@ -14,7 +14,7 @@ jobs:
     env:
       GH_TOKEN: ${{ github.token }}
       PAYLOAD_KEY: ${{ secrets.MISTIK67_PAYLOAD_KEY }}
-      INPUT_SHA256: 175bb890de8441aa36542e382b33263fdaa0fa13f36a9fe594a22049aff934f9
+      INPUT_SHA256: d2a9ef28c4fa7a071f33007e5ecdc410802fb50c2c60f121ede6354ecef574fe
       ASC_KEY_BASE64: ${{ secrets.MISTIK67_ASC_KEY_BASE64 }}
       ASC_KEY_ID: ${{ secrets.MISTIK67_ASC_KEY_ID }}
       ASC_ISSUER_ID: ${{ secrets.MISTIK67_ASC_ISSUER_ID }}
@@ -26,7 +26,7 @@ jobs:
       CI_APP_CHECK_DEBUG_TOKEN: ${{ secrets.MISTIK67_APP_CHECK_DEBUG_TOKEN }}
       ARCHIVE_ONLY: 'true'
       BUILD_NAME: 6.1.4
-      BUILD_NUMBER: '67'
+      BUILD_NUMBER: '68'
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
         with:
