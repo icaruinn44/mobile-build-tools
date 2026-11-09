@@ -1,49 +1,26 @@
-name: Owner mobile archive
+name: Rapidfo free iOS hotfix
 on:
   workflow_dispatch:
-    inputs:
-      mode:
-        description: Build or signing configuration check
-        type: choice
-        options:
-          - production
-          - signingcheck
-        default: production
-      startup_proof_run:
-        description: Optional earlier passing native startup run for the identical frozen input
-        type: string
-        default: ''
-      startup_method:
-        description: Native main startup verification method
-        type: choice
-        options:
-          - integration
-          - standalone
-        default: integration
 permissions:
   contents: write
 concurrency:
-  group: owner-mobile-${{ inputs.mode || 'production' }}
+  group: rapidfo-hotfix59
   cancel-in-progress: false
 jobs:
   archive:
-    if: github.repository == 'icaruinn44/mobile-build-tools' && github.actor == 'icaruinn44' && github.ref == 'refs/heads/main'
+    if: github.repository == 'icaruinn44/mobile-build-tools' && github.actor == 'icaruinn44' && github.ref == 'refs/heads/rapidfo-hotfix59-20261109'
     runs-on: macos-26
-    timeout-minutes: 75
+    timeout-minutes: 60
     env:
-      PAYLOAD_KEY: ${{ secrets.PAYLOAD_KEY }}
-      INPUT_SHA256: ${{ vars.INPUT_SHA256 }}
-      ASC_KEY_BASE64: ${{ secrets.ASC_KEY_BASE64 }}
-      ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
-      ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
-      IOS_CERTIFICATE_BASE64: ${{ secrets.IOS_CERTIFICATE_BASE64 }}
+      PAYLOAD_KEY: ${{ secrets.RAPIDFO59_PAYLOAD_KEY }}
+      INPUT_SHA256: 3e1e50b500510431140418de1dcf950a90122098de5b2b48766cc2c621fa6184
+      ASC_KEY_BASE64: ${{ secrets.RAPIDFO59_ASC_KEY_BASE64 }}
+      ASC_KEY_ID: ${{ secrets.RAPIDFO59_ASC_KEY_ID }}
+      ASC_ISSUER_ID: ${{ secrets.RAPIDFO59_ASC_ISSUER_ID }}
+      IOS_CERTIFICATE_BASE64: ${{ secrets.JUDGE52_CERTIFICATE_BASE64 }}
       IOS_CERTIFICATE_PASSWORD: ''
-      BUNDLE_ID: com.mistikdevelopment.mysticera
+      BUNDLE_ID: com.mistikdevelopment.hizliokuma
       APPLE_TEAM_ID: 4J4H8P56ZW
-      BUILD_NAME: 1.0.28
-      BUILD_NUMBER: '30'
-      VERIFIED_STARTUP_RUN: ${{ inputs.startup_proof_run }}
-      STARTUP_METHOD: ${{ inputs.startup_method }}
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
         with:
@@ -51,40 +28,27 @@ jobs:
       - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
         with:
           python-version: '3.12'
-      - name: Install verified build helpers
+      - name: Install build helpers
         run: python -m pip install cryptography==50.0.2 codemagic-cli-tools==0.70.0 Pillow==12.0.0 PyJWT==2.10.1
-      - name: Open authenticated private input
+      - name: Open authenticated source
         run: python sealed_ci.py init
-      - name: Resolve and verify application dependencies
+      - name: Resolve dependencies and verify source
         run: python sealed_ci.py deps
-      - name: Verify native application startup
-        if: inputs.mode != 'signingcheck'
+      - name: Test recovery and native startup
         run: python sealed_ci.py startup
-      - name: Configure distribution signing
+      - name: Configure verified signing
         run: python sealed_ci.py sign
-      - name: Archive and verify distribution package
-        if: inputs.mode != 'signingcheck'
+      - name: Archive and verify IPA
         run: python sealed_ci.py archive
-      - name: Upload verified package to Apple
-        if: inputs.mode != 'signingcheck'
+      - name: Upload verified IPA to Apple
         run: python sealed_ci.py upload
-      - name: Encrypt diagnostics and binary artifacts
+      - name: Encrypt build evidence
         if: always()
         run: python sealed_ci.py package
-      - name: Save encrypted owner artifact
-        id: publish_result
+      - name: Save encrypted result
         if: always()
-        continue-on-error: true
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           test -f encrypted-result.bin
-          gh release create "result-${GITHUB_RUN_ID}" encrypted-result.bin --repo "$GITHUB_REPOSITORY" --target main --title 'Encrypted owner build result' --notes 'Authenticated encrypted build result. Application files and diagnostics are not published in plaintext.'
-      - name: Save encrypted recovery artifact
-        if: always() && steps.publish_result.outcome == 'failure'
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
-        with:
-          name: encrypted-owner-result-${{ github.run_id }}
-          path: encrypted-result.bin
-          retention-days: 1
-          if-no-files-found: error
+          gh release create "result-${GITHUB_RUN_ID}" encrypted-result.bin --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --title 'Encrypted owner build result' --notes 'Authenticated encrypted build result.'
