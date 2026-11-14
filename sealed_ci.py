@@ -28,6 +28,9 @@ def initialize():
             target=(SOURCE/entry.filename).resolve()
             assert target.is_relative_to(SOURCE.resolve()) and (entry.external_attr>>16)&0o170000!=0o120000
         archive.extractall(SOURCE)
+    for script in (SOURCE/'ci').rglob('*.sh'):
+        raw=script.read_bytes()
+        if b'\r\n' in raw: script.write_bytes(raw.replace(b'\r\n',b'\n'))
     LOGS.mkdir(exist_ok=True)
     print('Authenticated private build input opened.')
 def run(stage):
