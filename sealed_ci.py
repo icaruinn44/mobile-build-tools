@@ -18,7 +18,7 @@ def cipher():
     assert len(key)==32
     return AESGCM(key)
 def initialize():
-    url='https://github.com/icaruinn44/mobile-build-tools/releases/download/input-judge52-20261108-v2/sealed-input-v2.bin'
+    url='https://github.com/icaruinn44/mobile-build-tools/releases/download/input-judge-shop53-20261114/judge53-input.bin'
     with urllib.request.urlopen(url,timeout=120) as response:data=response.read()
     assert hashlib.sha256(data).hexdigest()==os.environ['INPUT_SHA256'] and data[:9]==b'MOBILECI1'
     plain=cipher().decrypt(data[9:21],data[21:],b'mobile-ci-input-v1')
