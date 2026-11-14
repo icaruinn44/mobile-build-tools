@@ -4,16 +4,16 @@ on:
 permissions:
   contents: write
 concurrency:
-  group: owner-mobile-archive-judge52
+  group: owner-mobile-archive-judge54
   cancel-in-progress: false
 jobs:
   archive:
-    if: github.repository == 'icaruinn44/mobile-build-tools' && github.actor == 'icaruinn44' && github.ref == 'refs/heads/portfolio-judge52-20261108'
+    if: github.repository == 'icaruinn44/mobile-build-tools' && github.actor == 'icaruinn44' && github.ref == 'refs/heads/judge-shop54-20261114'
     runs-on: macos-26
     timeout-minutes: 75
     env:
       PAYLOAD_KEY: ${{ secrets.JUDGE52_PAYLOAD_KEY }}
-      INPUT_SHA256: 2c5b0392415932b2a620028bdb03cafe4b32537a64f95ddf070778d922bad2d1
+      INPUT_SHA256: dc7d28d9f4ed938780cee5af72bbc11b5099714f622b6abfc71b5364d0257e1d
       ASC_KEY_BASE64: ${{ secrets.ASC_KEY_BASE64 }}
       ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
       ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
@@ -22,7 +22,7 @@ jobs:
       BUNDLE_ID: com.mistikdevelopment.judgegame
       APPLE_TEAM_ID: 4J4H8P56ZW
       BUILD_NAME: 3.8.11
-      BUILD_NUMBER: '52'
+      BUILD_NUMBER: '54'
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
         with:
